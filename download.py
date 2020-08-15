@@ -115,6 +115,7 @@ class downloadFromYoutube:
                 else:
                     title = self.df['title'][r]
                     if not(utils.isnan(self.df['artist'][r])):
+                        # print (self.df['artist'][r])
                         artist = self.df['artist'][r]
                     if not(utils.isnan(self.df['album'][r])):
                         album = self.df['album'][r]
@@ -123,12 +124,13 @@ class downloadFromYoutube:
             if (utils.isnan(self.df['title'][r])):
                 self.df['title'][r] = title
             if (utils.isnan(self.df['artist'][r])):
-                self.df['artist'][r] = artist
+                self.df['artist'][r] = ''
             if (utils.isnan(self.df['album'][r])):
-                self.df['album'][r] = album
+                self.df['album'][r] = ''
             self.df['default_title'][r] = title
             self.df['default_artist'][r] = artist
             self.df['default_album'][r] = album
+            # print (self.df.values)
     ####################################################################
     
     ####################################################################
@@ -144,11 +146,12 @@ class downloadFromYoutube:
         -------
         NULL
         """
-        
+        # print (self.df.values)
         for link,mode,title,artist,album,default_title,default_artist,default_album in self.df.values:
             if (mode=='audio'):
                 fileName = 'audio/'+title+'.mp3'
                 default_fileName = 'audio/'+default_title+'.mp3'
+                # print ([fileName,title,artist,album],[default_fileName,default_title,default_artist,default_album])
                 downloadRequiredFlag = self.checkDownloadRequired([fileName,title,artist,album],[default_fileName,default_title,default_artist,default_album])
                 if (downloadRequiredFlag==True):
                     print ('Download %s - %s' %(mode,title))
