@@ -11,9 +11,11 @@ from mutagen.easyid3 import EasyID3
 
 class downloadFromYoutube:
     
-    def __init__(self,excelName):
+    def __init__(self,excelName,audioPreference,videoPreference):
         self.names = ['link','mode','title','artist','album']
         self.df = pandas.read_excel(excelName,names=self.names)
+        self.audioPreference = audioPreference
+        self.videoPreference = videoPreference
         
         self.refineDataFrame()
         self.download()
@@ -28,6 +30,7 @@ class downloadFromYoutube:
                     self.df['mode'][r] = 'audio'
             if (os.path.exists('audio/'+self.df['title'][r]+'.mp3')):
                 title,artist,album = utils.get_metadata_file('audio/'+self.df['title'][r]+'.mp3')
+                print (title,artist,album)
             elif (os.path.exists('video/'+self.df['title'][r]+'.mp4')):
                 title,artist,album = utils.get_metadata_file('video/'+self.df['title'][r]+'.mp4')
             else:
@@ -49,8 +52,10 @@ class downloadFromYoutube:
                 default_fileName = 'audio/'+default_title+'.mp3'
                 downloadRequiredFlag = self.checkDownloadRequired([fileName,title,artist,album],[default_fileName,default_title,default_artist,default_album])
                 if (downloadRequiredFlag==True):
+                    print ('Download %s' %(title))
                     self.getAudioTrack(link,title,artist,album)
-                    
+                else:
+                    print ('Skip %s' %(title))
                     
     def checkDownloadRequired(self,desired_params,default_params):
         downloadFlag = False
@@ -70,21 +75,20 @@ class downloadFromYoutube:
         
     def getAudioTrack(self,link,title,artist,album):
         yt = YouTube(link)
-        thumbnailFile = wget.download(yt.thumbnail_url)
+        thumbnailFile = wget.download(yt.thumbnail_url,bar=None)
         fileName = 'audio/'+title+'.mp3'
         
-        for stream in yt.streams:
-            if (stream.type=='audio'):
-                if (stream.mime_type=='audio/mp4' and stream.abr=='128kbps'):
-                    downloadFileName = stream.default_filename
-                    stream.download()
-                    
-                    # convert mp4 to mp3
-                    audio = ffmpeg.input(downloadFileName)
-                    audio = ffmpeg.output(audio,fileName)
-                    ffmpeg.run(audio)
-                    os.remove(downloadFileName)
-                    
+        itag = self.selectBestAudioStream(yt)
+        stream = yt.streams.get_by_itag(itag)
+        downloadFileName = stream.default_filename
+        stream.download()
+        
+        # convert mp4 to mp3
+        audio = ffmpeg.input(downloadFileName)
+        audio = ffmpeg.output(audio,fileName)
+        ffmpeg.run(audio,quiet=True,overwrite_output=False)
+        os.remove(downloadFileName)
+        
         # ADD COVER
         audio = MP3(fileName,ID3=ID3)
         audio.tags.add(APIC(mime='image/jpeg',type=3,desc=u'Cover',data=open(thumbnailFile,'rb').read()))
@@ -98,40 +102,12 @@ class downloadFromYoutube:
         audio['album'] = album
         audio.save()
         
-        
-        
-        
-
-# df = pandas.read_excel('download.xlsx',names=['link','mode','title','artist','album'])
-
-# for link,mode,title,artist,album in df.values:
-    # fileName = 'audio'+'/'+title+'.mp3'
-    # if not(os.path.exists(fileName)):
-        # yt = YouTube(link)
-        # thumbnailFile = wget.download(yt.thumbnail_url)
-        
-        # for stream in yt.streams:
-            # if (stream.type=='audio'):
-                # if (stream.mime_type=='audio/mp4' and stream.abr=='128kbps'):
-                    # downloadFileName = stream.default_filename
-                    
-                    # stream.download()
-                    
-                    # # convert mp4 to mp3
-                    # audio = ffmpeg.input(downloadFileName)
-                    # audio = ffmpeg.output(audio,fileName)
-                    # ffmpeg.run(audio)
-                    # os.remove(downloadFileName)
-                    
-        # # ADD COVER
-        # audio = MP3(fileName,ID3=ID3)
-        # audio.tags.add(APIC(mime='image/jpeg',type=3,desc=u'Cover',data=open(thumbnailFile,'rb').read()))
-        # audio.save()
-        # os.remove(thumbnailFile)
-        
-        # # ADD TITLE AND ALBUM NAME
-        # audio = EasyID3(fileName)
-        # audio['title'] = title
-        # audio['artist'] = artist
-        # audio['album'] = album
-        # audio.save()
+    def selectBestAudioStream(self,yt):
+        bitRate = 0
+        for stream in yt.streams:
+            if (stream.type=='audio'):
+                if (self.audioPreference in stream.mime_type):
+                    if (int(stream.abr.split('kbps')[0]) > bitRate):
+                        itag = stream.itag
+                        bitRate = int(stream.abr.split('kbps')[0])
+        return itag
