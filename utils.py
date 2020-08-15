@@ -1,4 +1,5 @@
 import numpy
+from mutagen.easyid3 import EasyID3
 
 def isnan(x):
     try:
@@ -15,5 +16,9 @@ def get_metadata_link(link):
     
 def get_metadata_file(fileName):
     if ('.mp3' in fileName):
-        title,artist,album = 'title','artist','album'
+        audio = EasyID3(fileName)
+        title = audio['title'][0]
+        artist = audio['artist'][0]
+        album = audio['album'][0]
+        # audio.save()
     return title,artist,album
