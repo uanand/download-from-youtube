@@ -1,6 +1,7 @@
 import os
 import numpy
 import ffmpeg
+from pytube import YouTube
 from mutagen.mp3 import MP3
 from mutagen.id3 import ID3,APIC
 from mutagen.easyid3 import EasyID3
@@ -58,7 +59,9 @@ def get_metadata_link(link):
     album : str
     """
     
-    title,artist,album = '','',''
+    yt = YouTube(link)
+    title = yt.title
+    artist,album = '',''
     return title,artist,album
 ########################################################################
 
