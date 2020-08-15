@@ -60,7 +60,7 @@ def get_metadata_link(link):
     """
     
     yt = YouTube(link)
-    title = yt.title
+    title = removeSpecialCharacters(yt.title)
     artist,album = '',''
     return title,artist,album
 ########################################################################
@@ -133,7 +133,7 @@ def convertFileFormat(source,target,deleteSource=True):
     
     audio = ffmpeg.input(source)
     audio = ffmpeg.output(audio,target)
-    ffmpeg.run(audio,quiet=True,overwrite_output=True)
+    ffmpeg.run(audio,quiet=True,overwrite_output=False)
     if (deleteSource==True):
         os.remove(source)
 ########################################################################
@@ -175,4 +175,35 @@ def addMetadata(fileName,thumbnail,title,artist,album):
         audio['artist'] = artist
         audio['album'] = album
         audio.save()
+########################################################################
+
+########################################################################
+def removeSpecialCharacters(string):
+    """ Remove special characters from string. "*<>?\|/: are not allowed
+    in windows.
+    
+    Parameters:
+    ----------
+    string : str
+    
+    Usage:
+    -----
+    removeSpecialCharacters(string)
+    
+    Returns:
+    -------
+    string : str
+        A new string with all the special characters removed.
+    """
+    
+    string = string.replace('"','')
+    string = string.replace('*','')
+    string = string.replace('<','')
+    string = string.replace('>','')
+    string = string.replace('?','')
+    string = string.replace('\\','')
+    string = string.replace('|','')
+    string = string.replace('/','')
+    string = string.replace(':','')
+    return string
 ########################################################################

@@ -107,10 +107,17 @@ class downloadFromYoutube:
         for r in range(row):
             if (utils.isnan(self.df['mode'][r])):
                     self.df['mode'][r] = 'audio'
-            if (os.path.exists('audio/'+self.df['title'][r]+'.mp3')):
-                title,artist,album = utils.get_metadata_file('audio/'+self.df['title'][r]+'.mp3')
-            elif (os.path.exists('video/'+self.df['title'][r]+'.mp4')):
-                title,artist,album = utils.get_metadata_file('video/'+self.df['title'][r]+'.mp4')
+            if (isinstance(self.df['title'][r],str)):
+                if (os.path.exists('audio/'+self.df['title'][r]+'.mp3')):
+                    title,artist,album = utils.get_metadata_file('audio/'+self.df['title'][r]+'.mp3')
+                elif (os.path.exists('video/'+self.df['title'][r]+'.mp4')):
+                    title,artist,album = utils.get_metadata_file('video/'+self.df['title'][r]+'.mp4')
+                else:
+                    title = self.df['title'][r]
+                    if not(utils.isnan(self.df['artist'][r])):
+                        artist = self.df['artist'][r]
+                    if not(utils.isnan(self.df['album'][r])):
+                        album = self.df['album'][r]
             else:
                 title,artist,album = utils.get_metadata_link(self.df['link'][r])
             if (utils.isnan(self.df['title'][r])):
