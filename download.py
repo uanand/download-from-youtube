@@ -106,19 +106,28 @@ class downloadFromYoutube:
         [row,col] = self.df.shape
         for r in range(row):
             if (utils.isnan(self.df['mode'][r])):
-                    self.df['mode'][r] = 'audio'
+                self.df['mode'][r] = 'audio'
             if (isinstance(self.df['title'][r],str)):
-                if (os.path.exists('audio/'+self.df['title'][r]+'.mp3')):
-                    title,artist,album = utils.get_metadata_file('audio/'+self.df['title'][r]+'.mp3')
-                elif (os.path.exists('video/'+self.df['title'][r]+'.mp4')):
-                    title,artist,album = utils.get_metadata_file('video/'+self.df['title'][r]+'.mp4')
+                if (self.df['mode'][r] == 'audio'):
+                    if (os.path.exists('audio/'+self.df['title'][r]+'.mp3')):
+                        title,artist,album = utils.get_metadata_file('audio/'+self.df['title'][r]+'.mp3')
+                    else:
+                        title = self.df['title'][r]
+                        if not(utils.isnan(self.df['artist'][r])):
+                            artist = self.df['artist'][r]
+                        if not(utils.isnan(self.df['album'][r])):
+                            album = self.df['album'][r]
+                elif (self.df['mode'][r] == 'video'):
+                    if (os.path.exists('video/'+self.df['title'][r]+'.mp4')):
+                        title,artist,album = utils.get_metadata_file('video/'+self.df['title'][r]+'.mp4')
+                    else:
+                        title = self.df['title'][r]
+                        if not(utils.isnan(self.df['artist'][r])):
+                            artist = self.df['artist'][r]
+                        if not(utils.isnan(self.df['album'][r])):
+                            album = self.df['album'][r]
                 else:
-                    title = self.df['title'][r]
-                    if not(utils.isnan(self.df['artist'][r])):
-                        # print (self.df['artist'][r])
-                        artist = self.df['artist'][r]
-                    if not(utils.isnan(self.df['album'][r])):
-                        album = self.df['album'][r]
+                    sys.exit('Not a valid mode. Quitting program.')
             else:
                 title,artist,album = utils.get_metadata_link(self.df['link'][r])
             if (utils.isnan(self.df['title'][r])):
@@ -130,7 +139,6 @@ class downloadFromYoutube:
             self.df['default_title'][r] = title
             self.df['default_artist'][r] = artist
             self.df['default_album'][r] = album
-            # print (self.df.values)
     ####################################################################
     
     ####################################################################
@@ -146,18 +154,25 @@ class downloadFromYoutube:
         -------
         NULL
         """
-        # print (self.df.values)
         for link,mode,title,artist,album,default_title,default_artist,default_album in self.df.values:
             if (mode=='audio'):
                 fileName = 'audio/'+title+'.mp3'
                 default_fileName = 'audio/'+default_title+'.mp3'
-                # print ([fileName,title,artist,album],[default_fileName,default_title,default_artist,default_album])
                 downloadRequiredFlag = self.checkDownloadRequired([fileName,title,artist,album],[default_fileName,default_title,default_artist,default_album])
                 if (downloadRequiredFlag==True):
                     print ('Download %s - %s' %(mode,title))
                     self.getAudioTrack(link,title,artist,album)
                 else:
-                    print ('Skip %s' %(title))
+                    print ('Skip %s download - %s' %(mode,title))
+            elif (mode=='video'):
+                fileName = 'video/'+title+'.mp4'
+                default_fileName = 'video/'+default_title+'.mp4'
+                downloadRequiredFlag = self.checkDownloadRequired([fileName,title,artist,album],[default_fileName,default_title,default_artist,default_album])
+                if (downloadRequiredFlag==True):
+                    print ('Download %s - %s' %(mode,title))
+                    self.getVideoTrack(link,title,artist,album)
+                else:
+                    print ('Skip %s download - %s' %(mode,title))
     ####################################################################
     
     ####################################################################
@@ -178,6 +193,7 @@ class downloadFromYoutube:
         """
         
         downloadFlag = False
+        
         if (os.path.exists(desired_params[0])==False):
             downloadFlag = True
         if (desired_params[0]!= default_params[0] or\
@@ -213,7 +229,7 @@ class downloadFromYoutube:
         """
         
         yt = YouTube(link)
-        thumbnailFile = wget.download(yt.thumbnail_url,bar=None)
+        thumbnailFile = wget.download(yt.thumbnail_url,bar=None,out='thumbnail.jpg')
         fileName = 'audio/'+title+'.mp3'
         itag = self.selectBestAudioStream(yt)
         stream = yt.streams.get_by_itag(itag)
@@ -234,7 +250,7 @@ class downloadFromYoutube:
         
         Usage:
         -----
-        self.getAudioTrack(yt)
+        self.selectBestAudioStream(yt)
         
         Returns:
         -------
@@ -249,5 +265,66 @@ class downloadFromYoutube:
                     if (int(stream.abr.split('kbps')[0]) > bitRate):
                         itag = stream.itag
                         bitRate = int(stream.abr.split('kbps')[0])
+        return itag
+    ####################################################################
+    
+    ####################################################################
+    def getVideoTrack(self,link,title,artist,album):
+        """ Downloads the video and converts it to mp4 format. In
+        addition to this a thumbnail, title, artist, and album are added
+        to the metadata of mp4 file. The name of mp4 is title.mp4.
+        
+        Usage:
+        -----
+        self.getVideoTrack(\
+            'youtube_link',\
+            'title_of_video',\
+            'artist_name',\
+            'album_name')
+            
+        Returns:
+        -------
+        NULL
+        """
+        
+        yt = YouTube(link)
+        thumbnailFile = wget.download(yt.thumbnail_url,bar=None)
+        fileName = 'video/'+title+'.mp4'
+        itag = self.selectBestVideoStream(yt)
+        stream = yt.streams.get_by_itag(itag)
+        downloadFileName = stream.default_filename
+        stream.download()
+        utils.convertFileFormat(downloadFileName,fileName)
+        utils.addMetadata(fileName,thumbnailFile,title,artist,album)
+    ####################################################################
+    
+    ####################################################################
+    def selectBestVideoStream(self,yt):
+        """ Selects the highest quality audio track in the given
+        audioPreference format. The input parameter is youtube object
+        (yt) that can be created using the pytube3 library.
+        
+        from pytube import YouTube
+        yt = YouTube('youtube link')
+        
+        Usage:
+        -----
+        self.selectBestVideoStream(yt)
+        
+        Returns:
+        -------
+        itag : int
+            Tag of the youtube stream with the highest video quality.
+        """
+        
+        resolution,fps = 0,0
+        for stream in yt.streams:
+            if (stream.type=='video'):
+                if (self.videoPreference in stream.mime_type):
+                    if (stream.resolution != None):
+                        if ((int(stream.resolution.split('p')[0]) > resolution) and (stream.fps > fps)):
+                            itag = stream.itag
+                            resolution = int(stream.resolution.split('p')[0])
+                            fps = stream.fps
         return itag
     ####################################################################
