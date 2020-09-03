@@ -5,6 +5,7 @@ from pytube import YouTube
 from mutagen.mp3 import MP3
 from mutagen.id3 import ID3,APIC
 from mutagen.easyid3 import EasyID3
+from mutagen.mp4 import MP4,MP4Cover
 
 ########################################################################
 def isnan(x):
@@ -103,7 +104,20 @@ def get_metadata_file(fileName):
         except:
             album = ''
     elif ('.mp4' in fileName):
-        title,artist,album = '','',''
+        video = MP4(fileName)
+        tags = video.tags
+        try:
+            title = tags.get('\xa9nam')[0]
+        except:
+            title = ''
+        try:
+            artist = tags.get('\xa9ART')[0]
+        except:
+            artist = ''
+        try:
+            album = tags.get('\xa9alb')[0]
+        except:
+            album = ''
     return title,artist,album
 ########################################################################
 
@@ -175,6 +189,16 @@ def addMetadata(fileName,thumbnail,title,artist,album):
         audio['artist'] = artist
         audio['album'] = album
         audio.save()
+    elif ('.mp4' in fileName):
+        video = MP4(fileName)
+        tags = video.tags
+        tags['\xa9nam'] = title
+        tags['\xa9ART'] = artist
+        tags['\xa9alb'] = album
+        with open(thumbnail,'rb') as f:
+            tags["covr"] = [MP4Cover(f.read(), imageformat=MP4Cover.FORMAT_JPEG)]
+        tags.save(fileName)
+        os.remove(thumbnail)
 ########################################################################
 
 ########################################################################
