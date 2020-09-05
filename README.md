@@ -2,9 +2,7 @@
 Download multiple audios and videos from Youtube.
 
 ## Motivation
-I have always wanted to have a travelling music library on my phone/portable music player. These are some of the songs I like listening to very frequently. More often than not, I have access to the web, but there are times when I don't and at these moments I miss having their offline version of my favourite songs. In addition to this, when listening to music on YouTube I have to keep the screen on (YouTube offers the premium version but there is usually a limit on the services one can subscribe to).
-
-There are multiple music providers that allow you to download songs for offline use, but a single service will not necessarily have all your favourite songs. And again, it's not feasible to subscribe to all the service providers. To tackle this issue I wrote this package in Python which downloads videos/audios from YouTube which can be added to an offline music library.
+I have always wanted to have a travelling music library on my phone/portable music player. These are some of the songs I like listening to very frequently. More often than not, I have access to the web, but there are times when I don't. At these moments, I miss having an offline version of my favourite songs. There are multiple music providers that allow you to download songs for offline use, but a single service will not necessarily have all your favourite songs. And, typically, it is not feasible to subscribe to multiple service providers. To tackle this issue I wrote this package in Python which downloads videos/audios from YouTube which can be added to an offline music library.
 
 ## Requirements
 * Windows/Debian Linux (Tested on Windows 10, Linux Mint, Ubuntu, and Raspberry Pi OS)
@@ -26,7 +24,7 @@ On Windows you can download the ffmpeg package from [here](https://ffmpeg.zerano
     * xlrd 1.2.0
 
 ## Usage
-Use the excel sheet download.xlsx as a template and enter the YouTube link in the appropriate column. In the other columns, enter the download mode (audio/video), title, artists, and album name (all four optional). Save the excel file and run app.py. In the current version audio and video will be saved in the appropriate directories in mp3 and mp4 format, respectively.
+Use the excel sheet download.xlsx as a template and enter the YouTube link in the appropriate column. In the other columns, enter the download mode (audio/video), title, artists, and album name (all four optional). Save the excel file and run app.py. In the current version audio and video will be saved in the appropriate directories in mp3 and mp4 format, respectively. If a new song needs to be downloaded, the youtube link can be added to the new row in the excel file. There is no need to remove the earlier entries in the excel sheet. Before downloading any new audio/video, the package checks if the file is already downloaded.
 
 ## Known issues
 After installing pytube3 and running the code for the first time, you may encounter this error message [`KeyError: 'cipher'`](https://github.com/nficano/pytube/issues/641). To fix this on Windows you can open the file `C:\ProgramData\Miniconda3\Lib\site-packages\pytube\extract.py` as Administrator and replace
