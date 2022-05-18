@@ -322,7 +322,7 @@ class downloadFromYoutube:
             if (stream.type=='video'):
                 if (self.videoPreference in stream.mime_type):
                     if (stream.resolution != None):
-                        if ((int(stream.resolution.split('p')[0]) > resolution) and (stream.fps > fps)):
+                        if ((int(stream.resolution.split('p')[0]) > resolution) and (stream.fps >= fps)):
                             itag = stream.itag
                             resolution = int(stream.resolution.split('p')[0])
                             fps = stream.fps
